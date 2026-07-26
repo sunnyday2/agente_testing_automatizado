@@ -1,0 +1,171 @@
+# QA Automation Agent - Full Infrastructure
+#
+# Start all services: docker-compose up -d
+# Start specific:     docker-compose up app allure
+# Run tests:          docker-compose run playwright
+# View logs:          docker-compose logs -f app
+# Tear down:          docker-compose down -v
+
+version: "3.8"
+
+services:
+  # ============================================================
+  # Core Application: FastAPI + LangGraph Agent
+  # ============================================================
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: qa-agent-app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./data/stories:/app/data/stories
+      - ./data/chroma:/app/data/chroma
+      - allure-results:/app/data/allure-results
+    depends_on:
+      - ollama
+    networks:
+      - qa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ============================================================
+  # Playwright Test Runner
+  # ============================================================
+  playwright:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.playwright
+    container_name: qa-agent-playwright
+    env_file:
+      - .env
+    environment:
+      - TEST_BASE_URL=${TEST_BASE_URL:-http://localhost:3000}
+      - TEST_HEADLESS=true
+    volumes:
+      - allure-results:/app/data/allure-results
+      - ./tests:/app/tests
+    depends_on:
+      - app
+    networks:
+      - qa-network
+    profiles:
+      - test
+
+  # ============================================================
+  # Allure Report Server
+  # ============================================================
+  allure:
+    build:
+      context: ./docker/allure
+      dockerfile: Dockerfile
+    container_name: qa-agent-allure
+    ports:
+      - "5050:5050"
+    environment:
+      CHECK_RESULTS_EVERY_SECONDS: 5
+      KEEP_HISTORY: 25
+      KEEP_HISTORY_LATEST: 5
+    volumes:
+      - allure-results:/app/allure-results
+    networks:
+      - qa-network
+    restart: unless-stopped
+
+  # ============================================================
+  # Ollama - Local LLM Server
+  # ============================================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: qa-agent-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - qa-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          memory: 4G
+
+  # ============================================================
+  # Plane.so - Project Management (Self-Hosted)
+  # ============================================================
+  plane-web:
+    image: makeplane/plane-frontend:latest
+    container_name: qa-plane-web
+    ports:
+      - "3390:3000"
+    depends_on:
+      - plane-api
+    networks:
+      - qa-network
+    restart: unless-stopped
+
+  plane-api:
+    image: makeplane/plane-backend:latest
+    container_name: qa-plane-api
+    ports:
+      - "8080:8000"
+    environment:
+      - DATABASE_URL=postgresql://plane:plane@plane-db:5432/plane
+      - REDIS_URL=redis://plane-redis:6379
+      - SECRET_KEY=${PLANE_SECRET_KEY:-super-secret-key-change-in-production}
+    depends_on:
+      - plane-db
+      - plane-redis
+    networks:
+      - qa-network
+    restart: unless-stopped
+
+  plane-db:
+    image: postgres:15-alpine
+    container_name: qa-plane-db
+    environment:
+      POSTGRES_USER: plane
+      POSTGRES_PASSWORD: plane
+      POSTGRES_DB: plane
+    volumes:
+      - plane-db-data:/var/lib/postgresql/data
+    networks:
+      - qa-network
+    restart: unless-stopped
+
+  plane-redis:
+    image: redis:7-alpine
+    container_name: qa-plane-redis
+    volumes:
+      - plane-redis-data:/data
+    networks:
+      - qa-network
+    restart: unless-stopped
+
+# ============================================================
+# Volumes
+# ============================================================
+volumes:
+  allure-results:
+    driver: local
+  ollama-data:
+    driver: local
+  plane-db-data:
+    driver: local
+  plane-redis-data:
+    driver: local
+
+# ============================================================
+# Networks
+# ============================================================
+networks:
+  qa-network:
+    driver: bridge

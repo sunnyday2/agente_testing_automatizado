@@ -1,0 +1,102 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "qa-automation-agent"
+version = "0.1.0"
+description = "AI-powered QA Automation & Reporting Agent that generates test scenarios from user stories and site crawling"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+authors = [
+    { name = "QA Automation Team" },
+]
+keywords = ["qa", "automation", "testing", "playwright", "langgraph", "rag"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Testing",
+]
+
+dependencies = [
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.34.0",
+    "pydantic==2.10.4",
+    "pydantic-settings==2.7.1",
+    "langchain==0.3.14",
+    "langchain-community==0.3.14",
+    "langchain-google-genai==2.0.8",
+    "langgraph==0.2.62",
+    "chromadb==0.5.23",
+    "ollama==0.4.5",
+    "playwright==1.49.1",
+    "httpx==0.28.1",
+    "pandas==2.2.3",
+    "python-dotenv==1.0.1",
+    "structlog==24.4.0",
+    "tenacity==9.0.0",
+    "gitpython==3.1.43",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.4",
+    "pytest-asyncio==0.24.0",
+    "pytest-playwright==0.6.2",
+    "pytest-cov==6.0.0",
+    "allure-pytest==2.13.5",
+    "ruff==0.8.6",
+    "mypy==1.14.1",
+    "pre-commit==4.0.1",
+    "respx==0.22.0",
+    "pytest-mock==3.14.0",
+    "factory-boy==3.3.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/qa-automation-agent"
+Repository = "https://github.com/qa-automation-agent"
+Documentation = "https://github.com/qa-automation-agent/docs"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "S", "B", "A", "COM", "C4", "T20"]
+ignore = ["S101", "COM812"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+plugins = ["pydantic.mypy"]
+
+[tool.mypy.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "smoke: Quick smoke tests for basic functionality",
+    "regression: Full regression test suite",
+    "e2e: End-to-end browser tests",
+    "unit: Unit tests with mocked dependencies",
+    "integration: Integration tests with real services",
+    "slow: Tests that take more than 30 seconds",
+]
+addopts = "-v --tb=short --strict-markers"
