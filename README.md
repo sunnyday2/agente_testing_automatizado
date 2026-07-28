@@ -41,7 +41,7 @@ AI-powered QA automation agent that generates test scenarios from user stories a
 - **RAG-powered test generation** — Ingests user stories (Markdown/JSON), embeds them in ChromaDB, and uses LLM to generate structured test scenarios
 - **Site discovery & autonomous test generation** — Crawl any URL with Playwright, extract interactive elements, and auto-generate POM classes + test scripts
 - **LangGraph agent orchestration** — State machine with retry logic, conditional routing, and checkpointing
-- **Dual LLM provider** — Local Ollama as primary, Google Gemini as fallback (zero-cost development)
+- **Dual LLM provider** — Google Gemini as primary (recommended), local Ollama as alternative for offline development
 - **Plane.so integration** — Auto-creates tasks, listens for webhooks, executes tests when tasks move to DOING
 - **Allure reporting** — Rich HTML reports with screenshots on failure, CSV export via API
 - **Auto Git commit** — Commits test artifacts on successful runs with structured messages
@@ -54,11 +54,19 @@ AI-powered QA automation agent that generates test scenarios from user stories a
 |-------------|---------|--------------|
 | Python | 3.11+ | Core application |
 | Docker & Docker Compose | Latest | Full infrastructure stack |
-| Ollama | Latest | Local LLM inference (primary) |
 | Git | 2.x+ | Auto-commit feature |
+| Gemini API Key | — | LLM inference (recommended) |
+| Ollama | Latest | Local LLM inference (optional, offline alternative) |
 | Node.js | 18+ | Only if testing a Node-based target app |
 
-### Installing Ollama (macOS)
+### Getting a Gemini API Key
+
+1. Go to [Google AI Studio](https://aistudio.google.com/apikey)
+2. Create or select a project
+3. Generate an API key
+4. Add it to your `.env`: `GEMINI_API_KEY=your-key-here`
+
+### Installing Ollama (Optional — for offline/local usage)
 
 ```bash
 brew install ollama
@@ -67,13 +75,22 @@ ollama pull llama3.2          # Pull the chat model
 ollama pull qwen2.5:7b        # Pull the embedding model
 ```
 
-### Installing Ollama (Linux)
+### Installing Ollama (macOS — optional)
 
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
 ollama serve
 ollama pull llama3.2
 ollama pull qwen2.5:7b
+```
+
+### Installing Docker (Linux)
+```bash
+# Update local packages
+sudo apt-get update
+
+# Install Docker Engine and the Compose plugin together
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
 ---
@@ -90,7 +107,7 @@ git clone <repository-url>
 cd agente_testing_automatizado
 
 # 2. Create and activate virtual environment
-python3.11 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate          # macOS / Linux
 # .venv\Scripts\activate           # Windows PowerShell
 
@@ -124,25 +141,30 @@ cp .env.example .env
 # Edit .env with your API keys
 
 # 3. Build and start all services
-docker-compose up -d
+docker compose up -d
 
 # 4. Verify services are running
-docker-compose ps
+docker compose ps
 curl http://localhost:8000/health
 ```
 
 This starts:
-- **app** (port 8000) — FastAPI server + LangGraph agent
-- **ollama** (port 11434) — Local LLM server
+- **app** (port 8000) — FastAPI server + LangGraph agent + Playwright
+- **ollama** (port 11434) — Local LLM server (optional, can be stopped if using Gemini)
 - **allure** (port 5050) — Test report dashboard
-- **plane-web** (port 3390) — Task board frontend
-- **plane-api** (port 8080) — Task board API
-- **plane-db** — PostgreSQL for Plane.so
-- **plane-redis** — Redis for Plane.so
+- **plane-web** (port 3390) — Task board frontend (optional)
+- **plane-api** (port 8080) — Task board API (optional)
+- **plane-db** — PostgreSQL for Plane.so (optional)
+- **plane-redis** — Redis for Plane.so (optional)
 
-### Post-Install: Pull LLM Models
+> **Tip:** If using Gemini as your LLM provider, you can start only the essential services:
+> ```bash
+> docker compose up -d app allure
+> ```
 
-After Ollama is running (locally or in Docker):
+### Post-Install: Pull LLM Models (only if using Ollama)
+
+If you chose Ollama as your LLM provider:
 
 ```bash
 # If running locally
@@ -153,6 +175,8 @@ ollama pull qwen2.5:7b
 docker exec qa-agent-ollama ollama pull llama3.2
 docker exec qa-agent-ollama ollama pull qwen2.5:7b
 ```
+
+> **Note:** Each model is 2-5GB. If disk space is limited, use `LLM_PROVIDER=gemini` instead.
 
 ---
 
@@ -168,14 +192,14 @@ Copy `.env.example` to `.env` and customize:
 | `ENVIRONMENT` | `development` | `development`, `staging`, or `production` |
 | `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
 | `LOG_FORMAT` | `console` | `console` (dev) or `json` (prod) |
-| `LLM_PROVIDER` | `ollama` | Primary LLM: `ollama` or `gemini` |
-| **Ollama** | | |
+| `LLM_PROVIDER` | `gemini` | Primary LLM: `gemini` or `ollama` |
+| **Ollama (optional)** | | |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server address |
 | `OLLAMA_MODEL` | `llama3.2` | Chat/generation model |
 | `OLLAMA_EMBEDDING_MODEL` | `qwen2.5:7b` | Embedding model |
 | **Google Gemini** | | |
-| `GEMINI_API_KEY` | (empty) | Required only if using Gemini |
-| `GEMINI_MODEL` | `gemini-2.5-flash` | Gemini model name |
+| `GEMINI_API_KEY` | (empty) | Required when using Gemini (recommended) |
+| `GEMINI_MODEL` | `gemini-3.5-flash` | Gemini model name |
 | **Plane.so** | | |
 | `PLANE_BASE_URL` | `http://localhost:8080` | Plane.so API URL |
 | `PLANE_API_KEY` | (empty) | Your Plane.so API key |
@@ -208,7 +232,7 @@ uvicorn src.api.app:app --reload --port 8000
 uvicorn src.api.app:app --host 0.0.0.0 --port 8000 --workers 2
 
 # Docker
-docker-compose up app
+docker compose up app
 ```
 
 The server is ready when you see: `Uvicorn running on http://0.0.0.0:8000`
@@ -573,7 +597,7 @@ agente_testing_automatizado/
 
 ```bash
 # 1. Start Plane.so services
-docker-compose up plane-web plane-api plane-db plane-redis -d
+docker compose up plane-web plane-api plane-db plane-redis -d
 
 # 2. Wait for startup (30-60 seconds)
 sleep 30
@@ -647,7 +671,18 @@ test(login-flow): PASSED - 2026-07-25 12:00:00 UTC - 12 tests passed in 45.2s
 
 ## Troubleshooting
 
-### Ollama not connecting
+### ChromaDB telemetry errors in logs
+
+If you see repeated `Failed to send telemetry event ClientStartEvent` errors:
+
+```bash
+# Add to .env to silence telemetry
+ANONYMIZED_TELEMETRY=false
+```
+
+Then restart: `docker compose restart app`
+
+### Ollama not connecting (only if using LLM_PROVIDER=ollama)
 
 ```bash
 # Check if Ollama is running
@@ -659,6 +694,9 @@ docker logs qa-agent-ollama
 # Pull models if missing
 ollama pull llama3.2
 ollama pull qwen2.5:7b
+
+# Alternative: switch to Gemini to avoid local model issues
+# Set LLM_PROVIDER=gemini in .env and restart
 ```
 
 ### ChromaDB errors on startup
@@ -681,8 +719,8 @@ playwright install-deps chromium  # Linux system deps
 
 ```bash
 # Rebuild without cache
-docker-compose build --no-cache app
-docker-compose build --no-cache playwright
+docker compose build --no-cache app
+docker compose build --no-cache playwright
 ```
 
 ### Tests failing with "connection refused"
@@ -693,7 +731,7 @@ Ensure the target application (`TEST_BASE_URL`) is running and accessible from t
 
 1. Check webhook is registered: Plane.so → Workspace Settings → Webhooks
 2. Verify secret matches: `PLANE_WEBHOOK_SECRET` in `.env`
-3. Check app logs: `docker-compose logs -f app | grep webhook`
+3. Check app logs: `docker compose logs -f app | grep webhook`
 
 ---
 

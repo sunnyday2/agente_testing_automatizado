@@ -29,8 +29,17 @@ def setup_logging(
         log_level: Minimum log level (DEBUG, INFO, WARNING, ERROR, CRITICAL).
         log_format: Output format - "json" for production, "console" for development.
     """
-    # Shared processors for both structlog and stdlib integration
-    shared_processors: list[structlog.types.Processor] = [
+    # Processors for structlog's own loggers
+    structlog_processors: list[structlog.types.Processor] = [
+        structlog.contextvars.merge_contextvars,
+        structlog.stdlib.add_log_level,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.UnicodeDecoder(),
+    ]
+
+    # Processors used by ProcessorFormatter for stdlib logging
+    stdlib_processors: list[structlog.types.Processor] = [
         structlog.contextvars.merge_contextvars,
         structlog.stdlib.add_log_level,
         structlog.stdlib.add_logger_name,
@@ -40,26 +49,24 @@ def setup_logging(
     ]
 
     if log_format == "json":
-        # Production: JSON output for log aggregation systems
         renderer: structlog.types.Processor = structlog.processors.JSONRenderer()
     else:
-        # Development: colored, human-readable console output
         renderer = structlog.dev.ConsoleRenderer(
             colors=True,
             exception_formatter=structlog.dev.plain_traceback,
         )
 
-    # Configure structlog
+    # Configure structlog for direct usage (structlog.get_logger())
     structlog.configure(
         processors=[
-            *shared_processors,
-            structlog.stdlib.ProcessorFormatter.wrap_events_in_msg_field,
-            structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+            *structlog_processors,
             renderer,
         ],
-        wrapper_class=structlog.stdlib.BoundLogger,
+        wrapper_class=structlog.make_filtering_bound_logger(
+            getattr(logging, log_level.upper(), logging.INFO)
+        ),
         context_class=dict,
-        logger_factory=structlog.stdlib.LoggerFactory(),
+        logger_factory=structlog.PrintLoggerFactory(),
         cache_logger_on_first_use=True,
     )
 
@@ -69,7 +76,7 @@ def setup_logging(
             structlog.stdlib.ProcessorFormatter.remove_processors_meta,
             renderer,
         ],
-        foreign_pre_chain=shared_processors,
+        foreign_pre_chain=stdlib_processors,
     )
 
     # Root handler: send all logs to stdout

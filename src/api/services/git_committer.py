@@ -251,7 +251,7 @@ class GitCommitService:
         files_to_stage: list[str] = []
 
         # Expand glob patterns from config
-        for pattern in self._git_config.stage_patterns:
+        for pattern in self._git_config.stage_patterns_list:
             matched = glob.glob(str(repo_root / pattern), recursive=True)
             for filepath in matched:
                 # Get path relative to repo root

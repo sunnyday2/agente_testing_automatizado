@@ -6,8 +6,6 @@
 # View logs:          docker-compose logs -f app
 # Tear down:          docker-compose down -v
 
-version: "3.8"
-
 services:
   # ============================================================
   # Core Application: FastAPI + LangGraph Agent

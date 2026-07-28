@@ -7,7 +7,7 @@ All settings are validated at startup to fail fast on misconfiguration.
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Project root directory (two levels up from this file)
@@ -109,21 +109,15 @@ class GitCommitSettings(BaseSettings):
     mode: Literal["commit-only", "commit-and-push", "disabled"] = "commit-only"
     remote: str = "origin"
     branch: str = ""  # Empty string = current branch
-    stage_patterns: list[str] = [
-        "tests/e2e/generated/**",
-        "data/allure-results/**",
-    ]
+    stage_patterns: str = "tests/e2e/generated/**,data/allure-results/**"
     commit_message_template: str = "test({feature}): PASSED - {timestamp} - {summary}"
     author_name: str = "QA Automation Agent"
     author_email: str = "qa-agent@automation.local"
 
-    @field_validator("stage_patterns", mode="before")
-    @classmethod
-    def parse_stage_patterns(cls, v: str | list[str]) -> list[str]:
-        """Parse stage patterns from comma-separated string or list."""
-        if isinstance(v, str):
-            return [p.strip() for p in v.split(",")]
-        return v
+    @property
+    def stage_patterns_list(self) -> list[str]:
+        """Return stage patterns as a list."""
+        return [p.strip() for p in self.stage_patterns.split(",")]
 
 
 class APISettings(BaseSettings):
@@ -134,16 +128,13 @@ class APISettings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
     debug: bool = False
-    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:8080"]
+    cors_origins: str = "http://localhost:3000,http://localhost:8080"
     workers: int = 1
 
-    @field_validator("cors_origins", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
-        """Parse CORS origins from comma-separated string or list."""
-        if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",")]
-        return v
+    @property
+    def cors_origins_list(self) -> list[str]:
+        """Return CORS origins as a list."""
+        return [origin.strip() for origin in self.cors_origins.split(",")]
 
 
 class Settings(BaseSettings):

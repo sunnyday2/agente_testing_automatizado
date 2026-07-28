@@ -1,10 +1,10 @@
 # Main application container
-# FastAPI core engine + LangGraph agent + RAG system
+# FastAPI core engine + LangGraph agent + RAG system + Playwright
 #
 # Build: docker build -f docker/Dockerfile -t qa-agent-app .
 # Run:   docker run -p 8000:8000 --env-file .env qa-agent-app
 
-FROM python:3.11-slim AS base
+FROM mcr.microsoft.com/playwright/python:v1.49.1-jammy
 
 # System dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -29,10 +29,6 @@ RUN mkdir -p data/stories data/chroma data/allure-results
 
 # Copy sample data
 COPY data/stories/ data/stories/
-
-# Non-root user for security
-RUN useradd -m -r appuser && chown -R appuser:appuser /app
-USER appuser
 
 # Expose FastAPI port
 EXPOSE 8000
