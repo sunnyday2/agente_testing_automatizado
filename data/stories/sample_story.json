@@ -1,0 +1,61 @@
+[
+  {
+    "story_id": "US-002",
+    "epic": "User Authentication",
+    "feature": "Password Reset",
+    "target_role": "QA Engineer",
+    "priority": "P1",
+    "title": "Password Reset via Email",
+    "as_a": "registered user who forgot my password",
+    "i_want": "to reset my password via a link sent to my email",
+    "so_that": "I can regain access to my account",
+    "acceptance_criteria": [
+      "Given I click 'Forgot Password', I should see a form asking for my email",
+      "Given I enter a registered email and submit, I should see a confirmation message",
+      "Given I click the reset link in the email, I should be taken to a new password form",
+      "Given I enter a new password that meets complexity requirements, my password should be updated",
+      "Given I enter a password shorter than 8 characters, I should see a validation error",
+      "Given the reset link is older than 1 hour, it should be expired and show an error"
+    ],
+    "notes": "Reset link tokens should be single-use. Email delivery should happen within 30 seconds."
+  },
+  {
+    "story_id": "US-003",
+    "epic": "Dashboard",
+    "feature": "Widget Management",
+    "target_role": "Chef",
+    "priority": "P2",
+    "title": "Dashboard Widget Customization",
+    "as_a": "product manager",
+    "i_want": "to rearrange and resize widgets on my dashboard",
+    "so_that": "I can prioritize the information most relevant to my workflow",
+    "acceptance_criteria": [
+      "Given I am on the dashboard, I should see a grid of widgets",
+      "Given I drag a widget to a new position, it should snap into the grid",
+      "Given I resize a widget by dragging its corner, it should expand or shrink within grid constraints",
+      "Given I click 'Add Widget', I should see a catalog of available widgets",
+      "Given I remove a widget, it should disappear and the layout should reflow",
+      "Given I refresh the page, my custom layout should be preserved"
+    ],
+    "notes": "Widget state should persist in localStorage with server-side backup. Maximum 12 widgets per dashboard."
+  },
+  {
+    "story_id": "US-004",
+    "epic": "Navigation",
+    "feature": "Sidebar Menu",
+    "target_role": "Developer",
+    "priority": "P2",
+    "title": "Collapsible Sidebar Navigation",
+    "as_a": "user",
+    "i_want": "to collapse and expand the sidebar navigation menu",
+    "so_that": "I can maximize my workspace area when needed",
+    "acceptance_criteria": [
+      "Given I click the collapse button, the sidebar should animate to a narrow icon-only view",
+      "Given the sidebar is collapsed, hovering over an icon should show a tooltip with the menu item name",
+      "Given I click the expand button, the sidebar should return to full width with labels",
+      "Given I navigate to a page via the sidebar, the active item should be highlighted",
+      "Given I am on a mobile viewport, the sidebar should be hidden by default with a hamburger toggle"
+    ],
+    "notes": "Collapse state should persist across page navigations. Transition animation should be 200ms."
+  }
+]
