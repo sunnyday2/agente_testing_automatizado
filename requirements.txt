@@ -11,7 +11,7 @@ pydantic-settings==2.7.1
 
 # LangChain & LLM
 langchain==0.3.14
-langchain-community==0.3.14
+langchain-community==0.3.27
 langchain-google-genai==2.0.8
 langgraph==0.2.62
 
