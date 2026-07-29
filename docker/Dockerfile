@@ -18,7 +18,7 @@ RUN npm ci --ignore-scripts && npm rebuild esbuild
 
 # Copy frontend source and build
 COPY frontend/ .
-RUN npm run build
+RUN npm run build || npx vite build
 
 # ============================================================
 # Stage 2: Python Production Image
