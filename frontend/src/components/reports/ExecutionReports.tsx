@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '@/context/AppContext';
+import { useReports } from '@/hooks/useReports';
 import { 
   BarChart, 
   Bar, 
@@ -18,8 +19,9 @@ import { TrendingUp, AlertTriangle, CheckCircle2, Download } from 'lucide-react'
 
 export const ExecutionReports: React.FC = () => {
   const { testSuites } = useApp();
+  const { analytics, exportCsv } = useReports();
 
-  const velocityData = [
+  const velocityData = analytics?.velocity ?? [
     { day: 'Mon', passed: 320, failed: 12, inProgress: 45 },
     { day: 'Tue', passed: 410, failed: 18, inProgress: 30 },
     { day: 'Wed', passed: 390, failed: 8, inProgress: 52 },
@@ -29,14 +31,14 @@ export const ExecutionReports: React.FC = () => {
     { day: 'Sun', passed: 180, failed: 2, inProgress: 10 },
   ];
 
-  const failureCategoryData = [
+  const failureCategoryData = analytics?.failures ?? [
     { name: '500 Server Error', value: 38, color: 'var(--color-dark-red)' },
     { name: 'Timeout / Latency', value: 24, color: 'var(--color-orange)' },
     { name: 'Assertion Mismatch', value: 18, color: 'var(--color-okra)' },
     { name: 'Auth/HMAC Signature', value: 12, color: 'var(--color-brown)' },
   ];
 
-  const passRateByEnv = [
+  const passRateByEnv = analytics?.pass_rate_by_env ?? [
     { env: 'Production', rate: 98.4 },
     { env: 'Staging', rate: 91.2 },
     { env: 'Dev Sandbox', rate: 84.6 },
@@ -56,7 +58,7 @@ export const ExecutionReports: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <button 
-            onClick={() => alert('Exporting full analytics data to CSV/JSON...')}
+            onClick={() => exportCsv()}
             className="btn-outline px-3 py-1.5 text-xs flex items-center gap-1.5"
           >
             <Download className="w-3.5 h-3.5 text-[var(--color-matcha)]" />

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
+import { useTasks } from '@/hooks/useTasks';
 import { ColumnType, CategoryTag, TaskCard, Priority } from '@/types';
 import { TaskModal } from '@/components/kanban/TaskModal';
 import { 
@@ -16,18 +17,86 @@ import {
 
 export const KanbanBoard: React.FC = () => {
   const {
-    tasks,
+    tasks: contextTasks,
     selectedBusinessTag,
     setSelectedBusinessTag,
     viewMode,
     setViewMode,
     searchQuery,
-    addTask,
-    updateTask,
-    moveTaskColumn,
-    deleteTask,
+    addTask: contextAddTask,
+    updateTask: contextUpdateTask,
+    moveTaskColumn: contextMoveTask,
+    deleteTask: contextDeleteTask,
     setCurrentView,
   } = useApp();
+
+  // API-backed hook — falls back to context data if API unavailable
+  const apiTasks = useTasks();
+  const hasApiData = apiTasks.tasks.length > 0 && !apiTasks.error;
+
+  // Use API tasks when available, otherwise context mock data
+  const tasks: TaskCard[] = hasApiData
+    ? apiTasks.tasks.map(t => ({
+        id: t.id,
+        title: t.title,
+        description: t.description ?? '',
+        category: t.category ?? 'OPERATIONS',
+        businessGroup: (t.business_group ?? 'Operations') as CategoryTag,
+        priority: (t.priority ?? 'MEDIUM') as Priority,
+        column: (t.column_name ?? 'TO DO') as ColumnType,
+        dueDate: t.due_date ?? undefined,
+        assignees: [],
+        tags: t.tags ?? [],
+      }))
+    : contextTasks;
+
+  const addTask = (taskData: Omit<TaskCard, 'id'>) => {
+    if (hasApiData) {
+      apiTasks.createTask({
+        title: taskData.title,
+        description: taskData.description,
+        category: taskData.category,
+        business_group: taskData.businessGroup,
+        priority: taskData.priority,
+        column_name: taskData.column,
+        due_date: taskData.dueDate,
+        tags: taskData.tags,
+      });
+    } else {
+      contextAddTask(taskData);
+    }
+  };
+
+  const updateTask = (task: TaskCard) => {
+    if (hasApiData) {
+      apiTasks.updateTask(task.id, {
+        title: task.title,
+        description: task.description,
+        category: task.category,
+        priority: task.priority,
+        column_name: task.column,
+        due_date: task.dueDate,
+      });
+    } else {
+      contextUpdateTask(task);
+    }
+  };
+
+  const moveTaskColumn = (taskId: string, newColumn: ColumnType) => {
+    if (hasApiData) {
+      apiTasks.moveTask(taskId, newColumn);
+    } else {
+      contextMoveTask(taskId, newColumn);
+    }
+  };
+
+  const deleteTask = (taskId: string) => {
+    if (hasApiData) {
+      apiTasks.deleteTask(taskId);
+    } else {
+      contextDeleteTask(taskId);
+    }
+  };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskCard | null>(null);

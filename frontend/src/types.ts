@@ -6,7 +6,9 @@ export type AppView =
   | 'tests' 
   | 'reports' 
   | 'login' 
-  | 'settings';
+  | 'settings'
+  | 'stories'
+  | 'crawl';
 
 export type Priority = 'HIGH' | 'MEDIUM' | 'LOW';
 
