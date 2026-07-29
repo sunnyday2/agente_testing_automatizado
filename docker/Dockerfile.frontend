@@ -1,0 +1,26 @@
+# Standalone frontend development container
+# Runs Vite dev server with HMR for hot-reload development.
+#
+# Usage (via docker-compose):
+#   docker compose up frontend
+#
+# Standalone:
+#   docker build -f docker/Dockerfile.frontend -t qa-agent-frontend .
+#   docker run -p 3000:3000 -v ./frontend/src:/app/frontend/src qa-agent-frontend
+
+FROM node:20-alpine
+
+WORKDIR /app/frontend
+
+# Install dependencies
+COPY frontend/package.json frontend/package-lock.json* ./
+RUN npm ci --ignore-scripts && npm rebuild esbuild
+
+# Copy source (will be overridden by volume mount in dev)
+COPY frontend/ .
+
+# Expose Vite dev server port
+EXPOSE 3000
+
+# Start Vite dev server
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
