@@ -120,6 +120,29 @@ class GitCommitSettings(BaseSettings):
         return [p.strip() for p in self.stage_patterns.split(",")]
 
 
+class DatabaseSettings(BaseSettings):
+    """SQLite database configuration."""
+
+    model_config = SettingsConfigDict(env_prefix="DB_")
+
+    path: str = str(PROJECT_ROOT / "data" / "qa_agent.db")
+    migrations_dir: str = str(PROJECT_ROOT / "src" / "api" / "db" / "migrations")
+
+
+class AuthSettings(BaseSettings):
+    """JWT authentication configuration."""
+
+    model_config = SettingsConfigDict(env_prefix="JWT_")
+
+    secret: str = "change-me-in-production-use-a-long-random-string"
+    algorithm: str = "HS256"
+    expiry_hours: int = 24
+    cookie_name: str = "access_token"
+    cookie_secure: bool = False  # Set to True in production (HTTPS only)
+    cookie_httponly: bool = True
+    cookie_samesite: str = "lax"
+
+
 class APISettings(BaseSettings):
     """FastAPI application configuration."""
 
@@ -168,6 +191,8 @@ class Settings(BaseSettings):
     test_runner: TestRunnerSettings = Field(default_factory=TestRunnerSettings)
     git: GitCommitSettings = Field(default_factory=GitCommitSettings)
     api: APISettings = Field(default_factory=APISettings)
+    database: DatabaseSettings = Field(default_factory=DatabaseSettings)
+    auth: AuthSettings = Field(default_factory=AuthSettings)
 
 
 def get_settings() -> Settings:

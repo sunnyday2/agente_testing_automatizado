@@ -8,7 +8,7 @@
 
 services:
   # ============================================================
-  # Core Application: FastAPI + LangGraph Agent
+  # Core Application: FastAPI + LangGraph Agent + Frontend (production)
   # ============================================================
   app:
     build:
@@ -19,9 +19,13 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      - ENVIRONMENT=production
+      - DB_PATH=/app/data/qa_agent.db
     volumes:
       - ./data/stories:/app/data/stories
       - ./data/chroma:/app/data/chroma
+      - app-db:/app/data
       - allure-results:/app/data/allure-results
     depends_on:
       - ollama
@@ -34,6 +38,31 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+
+  # ============================================================
+  # Frontend Dev Server (development only)
+  # ============================================================
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: qa-agent-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/src:/app/frontend/src
+      - ./frontend/public:/app/frontend/public
+      - ./frontend/index.html:/app/frontend/index.html
+      - ./frontend/vite.config.ts:/app/frontend/vite.config.ts
+      - ./frontend/tsconfig.json:/app/frontend/tsconfig.json
+    environment:
+      - VITE_API_URL=http://app:8000
+    depends_on:
+      - app
+    networks:
+      - qa-network
+    profiles:
+      - dev
 
   # ============================================================
   # Playwright Test Runner
@@ -153,6 +182,8 @@ services:
 # ============================================================
 volumes:
   allure-results:
+    driver: local
+  app-db:
     driver: local
   ollama-data:
     driver: local
