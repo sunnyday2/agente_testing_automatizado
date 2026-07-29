@@ -10,7 +10,9 @@ import {
   Plus, 
   Settings, 
   HelpCircle,
-  Microscope
+  Microscope,
+  BookOpen,
+  Radar,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -21,6 +23,8 @@ export const Sidebar: React.FC = () => {
     { id: 'projects', label: 'All Projects', icon: <FolderKanban className="w-4 h-4" /> },
     { id: 'boards', label: 'Active Boards', icon: <KanbanSquare className="w-4 h-4" /> },
     { id: 'tests', label: 'Test Suites', icon: <FlaskConical className="w-4 h-4" /> },
+    { id: 'stories', label: 'User Stories', icon: <BookOpen className="w-4 h-4" /> },
+    { id: 'crawl', label: 'Site Crawl', icon: <Radar className="w-4 h-4" /> },
     { id: 'reports', label: 'Execution Reports', icon: <BarChart3 className="w-4 h-4" /> },
   ];
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
+import { useTestSuites } from '@/hooks/useTestSuites';
 import { 
   FlaskConical, 
   Play, 
@@ -13,7 +14,16 @@ import {
 } from 'lucide-react';
 
 export const TestSuites: React.FC = () => {
-  const { testSuites, runTestSuite } = useApp();
+  const { testSuites: contextSuites, runTestSuite: contextRunSuite } = useApp();
+  const apiSuites = useTestSuites();
+
+  // Use API data when available, fall back to context mock data
+  const hasApiData = apiSuites.suites.length > 0 && !apiSuites.error;
+  const testSuites = hasApiData ? apiSuites.suites : contextSuites;
+  const runTestSuite = hasApiData
+    ? (id: string) => { apiSuites.runSuite(id); }
+    : contextRunSuite;
+
   const [selectedSuiteId, setSelectedSuiteId] = useState<string>(testSuites[0]?.id || '');
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
 

@@ -10,6 +10,8 @@ import { TestSuites } from '@/components/tests/TestSuites';
 import { ExecutionReports } from '@/components/reports/ExecutionReports';
 import { AllProjects } from '@/components/projects/AllProjects';
 import { SettingsPage } from '@/components/settings/SettingsPage';
+import { StoriesPage } from '@/components/stories/StoriesPage';
+import { CrawlPage } from '@/components/crawl/CrawlPage';
 
 function AppContent() {
   const { currentView, user } = useApp();
@@ -31,6 +33,8 @@ function AppContent() {
           {currentView === 'tests' && <TestSuites />}
           {currentView === 'reports' && <ExecutionReports />}
           {currentView === 'settings' && <SettingsPage />}
+          {currentView === 'stories' && <StoriesPage />}
+          {currentView === 'crawl' && <CrawlPage />}
         </main>
       </div>
     </div>

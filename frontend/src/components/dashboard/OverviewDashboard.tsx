@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '@/context/AppContext';
+import { useStats } from '@/hooks/useStats';
 import { 
   Calendar, 
   Download, 
@@ -17,11 +18,12 @@ import {
 
 export const OverviewDashboard: React.FC = () => {
   const { projects, testSuites, events, runTestSuite, setCurrentView } = useApp();
+  const { stats } = useStats();
 
-  const totalTests = 2842;
-  const passedTests = 2410;
-  const failedTests = 84;
-  const inProgressTests = 348;
+  const totalTests = stats?.total_tests ?? 2842;
+  const passedTests = stats?.passed ?? 2410;
+  const failedTests = stats?.failed ?? 84;
+  const inProgressTests = stats?.in_progress ?? 348;
 
   return (
     <div className="space-y-6 pb-12">
