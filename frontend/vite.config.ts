@@ -25,6 +25,7 @@ export default defineConfig({
       '/crawl': {
         target: 'http://localhost:8000',
         changeOrigin: true,
+        timeout: 600000,
       },
       '/docs': {
         target: 'http://localhost:8000',
