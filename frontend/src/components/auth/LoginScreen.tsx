@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useTheme } from '@/context/ThemeContext';
+import { authService } from '@/services/authService';
 import { 
   Microscope, 
   Mail, 
@@ -19,15 +20,29 @@ export const LoginScreen: React.FC = () => {
   const { login } = useApp();
   const { theme, toggleTheme } = useTheme();
 
-  const [email, setEmail] = useState('anna.ganna@gmail.com');
-  const [password, setPassword] = useState('••••••••••••');
+  const [email, setEmail] = useState('admin@testops.local');
+  const [password, setPassword] = useState('admin123');
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
-    login(email);
+    if (!email || !password) return;
+
+    setError(null);
+    setIsLoading(true);
+    try {
+      // Call real API to set JWT cookie
+      await authService.login({ email, password });
+      // Then update local app state
+      login(email);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -126,13 +141,21 @@ export const LoginScreen: React.FC = () => {
               </label>
             </div>
 
+            {/* Error message */}
+            {error && (
+              <div className="p-2.5 bg-[var(--color-dark-red-light)] border border-[var(--color-dark-red)] rounded text-xs text-[var(--color-dark-red)] font-mono" role="alert">
+                {error}
+              </div>
+            )}
+
             {/* Sign In Submit */}
             <button
               type="submit"
-              className="w-full py-3 px-4 btn-matcha flex items-center justify-center gap-2 text-sm font-bold shadow-md"
+              disabled={isLoading}
+              className="w-full py-3 px-4 btn-matcha flex items-center justify-center gap-2 text-sm font-bold shadow-md disabled:opacity-50"
             >
-              <span>Sign In</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>{isLoading ? 'Signing in...' : 'Sign In'}</span>
+              {!isLoading && <ArrowRight className="w-4 h-4" />}
             </button>
           </form>
 
