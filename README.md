@@ -223,7 +223,25 @@ uvicorn src.api.app:app --reload --port 8000
 
 Open http://localhost:3000 — the Vite dev server proxies all `/api/*`, `/crawl`, `/health`, and `/webhooks` requests to the backend automatically.
 
-**Default login:** `admin@testops.local` / `admin123`
+### Default Test User
+
+The database migration seeds a default admin account for development and testing:
+
+| Field | Value |
+|-------|-------|
+| Email | `admin@testops.local` |
+| Password | `admin123` |
+| Role | Admin |
+| User ID | `usr_default_admin_001` |
+
+This account is created automatically when you run `python scripts/migrate.py` (or when the Docker container starts). It provides full access to all frontend views and API endpoints.
+
+**What it's for:**
+- Local development — login immediately without manual user creation
+- Testing — verify auth flow, API access, and all protected routes
+- Demo — showcase the full UI functionality
+
+**Security note:** Change or remove this account in production. The password hash is stored in `src/api/db/migrations/002_seed_default_data.sql`.
 
 ### Frontend Scripts
 
