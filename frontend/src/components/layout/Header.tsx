@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useTheme } from '@/context/ThemeContext';
+import { authService } from '@/services/authService';
 import { AppView } from '@/types';
 import { 
   Sun, 
@@ -205,7 +206,8 @@ export const Header: React.FC = () => {
                   <Settings className="w-3.5 h-3.5" /> Workspace Settings
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
+                    try { await authService.logout(); } catch {}
                     logout();
                     setShowUserMenu(false);
                   }}
