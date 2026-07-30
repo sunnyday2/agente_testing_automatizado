@@ -46,17 +46,17 @@ interface AppContextType {
 
 const defaultUser: User = {
   id: 'usr-0',
-  name: 'Anna Ganna',
-  email: 'anna.ganna@gmail.com',
-  role: 'Lead System Architect & QA Ops',
+  name: '',
+  email: '',
+  role: '',
   avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80',
-  isAuthenticated: true,
+  isAuthenticated: false,
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentView, setCurrentView] = useState<AppView>('boards');
+  const [currentView, setCurrentView] = useState<AppView>('login');
   const [user, setUser] = useState<User>(defaultUser);
 
   const [tasks, setTasks] = useState<TaskCard[]>(initialTasks);
@@ -68,12 +68,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [testSuites, setTestSuites] = useState<TestSuite[]>(initialTestSuites);
   const [events, setEvents] = useState<SystemEvent[]>(initialSystemEvents);
 
+  // Check existing session on mount (cookie-based)
+  React.useEffect(() => {
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error('Not authenticated');
+      })
+      .then(data => {
+        setUser({
+          id: data.data.id,
+          name: data.data.name,
+          email: data.data.email,
+          role: data.data.role,
+          avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80',
+          isAuthenticated: true,
+        });
+        setCurrentView('overview');
+      })
+      .catch(() => {
+        // No valid session — stay on login
+        setUser(prev => ({ ...prev, isAuthenticated: false }));
+        setCurrentView('login');
+      });
+  }, []);
+
   const login = (email: string) => {
     setUser({
       ...defaultUser,
       email,
       name: email.split('@')[0].toUpperCase(),
       isAuthenticated: true,
+      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80',
     });
     setCurrentView('overview');
   };
