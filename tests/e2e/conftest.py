@@ -19,12 +19,6 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 def pytest_addoption(parser: pytest.Parser) -> None:
     """Add custom CLI options for e2e tests."""
     parser.addoption(
-        "--base-url",
-        action="store",
-        default=os.getenv("TEST_BASE_URL", "http://localhost:3000"),
-        help="Base URL for the application under test",
-    )
-    parser.addoption(
         "--browser-name",
         action="store",
         default=os.getenv("TEST_BROWSER", "chromium"),
