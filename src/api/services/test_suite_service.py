@@ -69,6 +69,29 @@ class TestSuiteService:
         """
         return await self.repo.get_by_id(suite_id)
 
+    async def register_suite(self, suite_data: dict[str, Any]) -> dict[str, Any] | None:
+        """Register a new test suite in the database.
+
+        Args:
+            suite_data: Dict with name, category, test_path.
+
+        Returns:
+            Created suite dict.
+        """
+        from datetime import datetime, timezone
+
+        suite_id = generate_id("suite")
+        now = datetime.now(timezone.utc).isoformat()
+
+        await self.db.execute(
+            """INSERT OR IGNORE INTO test_suites (id, name, category, status, pass_rate, steps, test_path, created_at)
+               VALUES (?, ?, ?, 'PENDING', 0.0, '[]', ?, ?)""",
+            (suite_id, suite_data["name"], suite_data["category"], suite_data.get("test_path"), now),
+        )
+        await self.db.commit()
+
+        return await self.repo.get_by_id(suite_id)
+
     async def run_suite(
         self,
         suite_id: str,
@@ -130,6 +153,7 @@ class TestSuiteService:
             result: TestRunResult = await self.runner.run(
                 tags=run_tags if run_tags else None,
                 feature_name=suite["name"],
+                test_path=suite.get("test_path"),
                 extra_args=extra_args if extra_args else None,
             )
         except Exception as exc:

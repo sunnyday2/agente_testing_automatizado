@@ -102,7 +102,7 @@ services:
       KEEP_HISTORY: 25
       KEEP_HISTORY_LATEST: 5
     volumes:
-      - allure-results:/app/allure-results
+      - ./data/allure-results:/app/allure-results
     networks:
       - qa-network
     restart: unless-stopped

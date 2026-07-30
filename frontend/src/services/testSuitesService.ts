@@ -16,4 +16,9 @@ export const testSuitesService = {
     const { data } = await api.post<{ data: TestSuite }>(`/test-suites/${id}/run`);
     return data.data;
   },
+
+  async scan(): Promise<TestSuite[]> {
+    const { data } = await api.post<{ data: TestSuite[]; total: number }>('/test-suites/scan');
+    return data.data;
+  },
 };

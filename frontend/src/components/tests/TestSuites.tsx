@@ -47,15 +47,28 @@ export const TestSuites: React.FC = () => {
             Execute, inspect, and debug test suite assertion steps across isolated sandbox environments.
           </p>
         </div>
-        <button
-          onClick={() => {
-            testSuites.forEach((s) => runTestSuite(s.id));
-          }}
-          className="btn-matcha px-4 py-2 text-xs font-mono font-bold flex items-center gap-2 shadow-sm shrink-0"
-        >
-          <Play className="w-4 h-4 fill-current" />
-          <span>Execute All Active Suites</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={async () => {
+              const { testSuitesService } = await import('@/services/testSuitesService');
+              await testSuitesService.scan();
+              if (hasApiData) apiSuites.refresh();
+            }}
+            className="btn-outline px-4 py-2 text-xs font-mono font-bold flex items-center gap-2 shrink-0"
+          >
+            <Search className="w-4 h-4" />
+            <span>Scan Tests</span>
+          </button>
+          <button
+            onClick={() => {
+              testSuites.forEach((s) => runTestSuite(s.id));
+            }}
+            className="btn-matcha px-4 py-2 text-xs font-mono font-bold flex items-center gap-2 shadow-sm shrink-0"
+          >
+            <Play className="w-4 h-4 fill-current" />
+            <span>Execute All Active Suites</span>
+          </button>
+        </div>
       </div>
 
       {/* Category Filters */}

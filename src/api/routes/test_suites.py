@@ -30,6 +30,72 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/api/test-suites", tags=["Test Suites"])
 
 
+@router.post(
+    "/scan",
+    response_model=TestSuiteListResponse,
+    summary="Scan and register test suites",
+    description="Scan configured test directories and register discovered test files as suites.",
+)
+async def scan_test_suites(
+    db: aiosqlite.Connection = Depends(get_db),
+    _user: dict[str, Any] = Depends(get_current_user),
+) -> TestSuiteListResponse:
+    """Scan test directories and register new suites.
+
+    Discovers test_*.py files in the configured test directories,
+    registers any new ones as suites in the database.
+    """
+    from pathlib import Path
+    import re
+
+    # Configurable directories to scan
+    scan_dirs = [
+        Path("tests/e2e/generated/tests"),
+        Path("tests/e2e"),
+    ]
+
+    service = TestSuiteService(db)
+    existing_suites, _ = await service.list_suites(limit=1000)
+    existing_paths = {s.get("test_path") for s in existing_suites if s.get("test_path")}
+
+    registered = []
+    for scan_dir in scan_dirs:
+        if not scan_dir.exists():
+            continue
+        for test_file in sorted(scan_dir.glob("test_*.py")):
+            rel_path = str(test_file)
+            if rel_path in existing_paths:
+                continue
+
+            # Derive suite name from file
+            stem = test_file.stem.replace("test_", "").replace("_", " ").title()
+            # Detect category from path
+            if "generated" in str(test_file):
+                category = "E2E Validation"
+            elif "smoke" in test_file.stem:
+                category = "Smoke"
+            elif "regression" in test_file.stem:
+                category = "Regression"
+            else:
+                category = "E2E Validation"
+
+            suite_data = {
+                "name": f"{stem} Tests",
+                "category": category,
+                "test_path": rel_path,
+            }
+            new_suite = await service.register_suite(suite_data)
+            if new_suite:
+                registered.append(new_suite)
+
+    # Return all suites after scan
+    all_suites, total = await service.list_suites(limit=100)
+    return TestSuiteListResponse(
+        data=[TestSuiteResponse(**s) for s in all_suites],
+        total=total,
+    )
+
+
 @router.get(
     "",
     response_model=TestSuiteListResponse,
