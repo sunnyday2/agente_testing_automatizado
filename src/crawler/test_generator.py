@@ -165,7 +165,7 @@ class CrawlTestGenerator:
         """
         lines: list[str] = []
 
-        lines.append("from playwright.async_api import Page")
+        lines.append("from playwright.sync_api import Page")
         lines.append("")
         lines.append("")
         lines.append(f"class {class_name}:")
@@ -192,10 +192,10 @@ class CrawlTestGenerator:
         lines.append("")
 
         # Navigation method
-        lines.append("    async def navigate(self) -> None:")
+        lines.append("    def navigate(self) -> None:")
         lines.append('        """Navigate to this page."""')
-        lines.append(f'        await self.page.goto("{page.url}")')
-        lines.append('        await self.page.wait_for_load_state("domcontentloaded")')
+        lines.append(f'        self.page.goto("{page.url}")')
+        lines.append('        self.page.wait_for_load_state("domcontentloaded")')
         lines.append("")
 
         # Action methods for buttons
@@ -203,10 +203,10 @@ class CrawlTestGenerator:
         for btn in buttons[:10]:  # Limit methods
             method_name = self._element_to_method_name(btn, "click")
             if method_name:
-                lines.append(f"    async def {method_name}(self) -> None:")
+                lines.append(f"    def {method_name}(self) -> None:")
                 btn_text = btn.text or btn.aria_label or "button"
                 lines.append(f'        """Click the {btn_text} button."""')
-                lines.append(f'        await self.page.locator("{btn.selector}").click()')
+                lines.append(f'        self.page.locator("{btn.selector}").click()')
                 lines.append("")
 
         # Fill methods for inputs
@@ -214,10 +214,10 @@ class CrawlTestGenerator:
         for inp in inputs[:10]:  # Limit methods
             method_name = self._element_to_method_name(inp, "fill")
             if method_name:
-                lines.append(f"    async def {method_name}(self, value: str) -> None:")
+                lines.append(f"    def {method_name}(self, value: str) -> None:")
                 inp_label = inp.text or inp.aria_label or inp.element_type or "input"
                 lines.append(f'        """Fill the {inp_label} field."""')
-                lines.append(f'        await self.page.locator("{inp.selector}").fill(value)')
+                lines.append(f'        self.page.locator("{inp.selector}").fill(value)')
                 lines.append("")
 
         # Select methods for dropdowns
@@ -225,19 +225,19 @@ class CrawlTestGenerator:
         for sel in selects[:5]:
             method_name = self._element_to_method_name(sel, "select")
             if method_name:
-                lines.append(f"    async def {method_name}(self, value: str) -> None:")
+                lines.append(f"    def {method_name}(self, value: str) -> None:")
                 sel_label = sel.text or sel.aria_label or "dropdown"
                 lines.append(f'        """Select option in {sel_label}."""')
                 lines.append(
-                    f'        await self.page.locator("{sel.selector}").select_option(value)'
+                    f'        self.page.locator("{sel.selector}").select_option(value)'
                 )
                 lines.append("")
 
         # Assertion helpers
-        lines.append("    async def is_loaded(self) -> bool:")
+        lines.append("    def is_loaded(self) -> bool:")
         lines.append('        """Check if the page is fully loaded."""')
         lines.append("        try:")
-        lines.append(f'            await self.page.wait_for_url("**{self._url_path(page.url)}*")')
+        lines.append(f'            self.page.wait_for_url("**{self._url_path(page.url)}*")')
         lines.append("            return True")
         lines.append("        except Exception:")
         lines.append("            return False")
@@ -310,7 +310,7 @@ class CrawlTestGenerator:
         lines.append(header)
         lines.append("import allure")
         lines.append("import pytest")
-        lines.append("from playwright.async_api import Page")
+        lines.append("from playwright.sync_api import Page")
         lines.append("")
         lines.append("")
         lines.append('@allure.feature("Smoke Tests")')
@@ -323,16 +323,16 @@ class CrawlTestGenerator:
             test_name = self._url_to_test_name(page.url, page.title)
             lines.append(f"    @allure.title('{page.title or page.url}')")
             lines.append("    @pytest.mark.smoke")
-            lines.append(f"    async def test_{test_name}_loads(self, page: Page) -> None:")
+            lines.append(f"    def test_{test_name}_loads(self, page: Page) -> None:")
             lines.append(f'        """Verify {page.title or page.url} loads without errors."""')
-            lines.append(f'        response = await page.goto("{page.url}")')
+            lines.append(f'        response = page.goto("{page.url}")')
             lines.append("        assert response is not None")
             lines.append("        assert response.status < 400, (")
             lines.append(f'            f"Page {page.url} returned status {{response.status}}"')
             lines.append("        )")
             title_check = page.title.replace('"', '\\"') if page.title else ""
             if title_check:
-                lines.append(f'        assert "{title_check}" in await page.title()')
+                lines.append(f'        assert "{title_check}" in page.title()')
             lines.append("")
 
         file_path = self._tests_dir / "test_smoke_generated.py"
@@ -360,7 +360,7 @@ class CrawlTestGenerator:
         lines.append(header)
         lines.append("import allure")
         lines.append("import pytest")
-        lines.append("from playwright.async_api import Page")
+        lines.append("from playwright.sync_api import Page")
         lines.append("")
         lines.append("")
         lines.append('@allure.feature("Form Tests")')
@@ -375,17 +375,17 @@ class CrawlTestGenerator:
 
             lines.append(f"    @allure.title('Form fields on {page.title or page.url}')")
             lines.append("    @pytest.mark.regression")
-            lines.append(f"    async def test_{test_name}_form_visible(self, page: Page) -> None:")
+            lines.append(f"    def test_{test_name}_form_visible(self, page: Page) -> None:")
             lines.append(f'        """Verify form elements are visible on {page.title or page.url}."""')
-            lines.append(f'        await page.goto("{page.url}")')
-            lines.append('        await page.wait_for_load_state("domcontentloaded")')
+            lines.append(f'        page.goto("{page.url}")')
+            lines.append('        page.wait_for_load_state("domcontentloaded")')
             lines.append("")
 
             for inp in inputs[:5]:  # Limit assertions per page
                 lines.append(f'        # Verify {inp.element_type or "input"} field: {inp.text or inp.selector}')
                 lines.append(f'        locator = page.locator("{inp.selector}")')
-                lines.append("        await locator.wait_for(state='visible', timeout=5000)")
-                lines.append("        assert await locator.is_visible()")
+                lines.append("        locator.wait_for(state='visible', timeout=5000)")
+                lines.append("        assert locator.is_visible()")
                 lines.append("")
 
             # Test form submission if there's a submit button
@@ -393,19 +393,19 @@ class CrawlTestGenerator:
             if submit_buttons and inputs:
                 lines.append(f"    @allure.title('Form submission on {page.title or page.url}')")
                 lines.append("    @pytest.mark.regression")
-                lines.append(f"    async def test_{test_name}_form_submit(self, page: Page) -> None:")
+                lines.append(f"    def test_{test_name}_form_submit(self, page: Page) -> None:")
                 lines.append(f'        """Test form submission with empty fields on {page.title or page.url}."""')
-                lines.append(f'        await page.goto("{page.url}")')
-                lines.append('        await page.wait_for_load_state("domcontentloaded")')
+                lines.append(f'        page.goto("{page.url}")')
+                lines.append('        page.wait_for_load_state("domcontentloaded")')
                 lines.append("")
                 btn = submit_buttons[0]
                 lines.append(f'        # Click submit without filling fields')
                 lines.append(f'        submit_btn = page.locator("{btn.selector}")')
-                lines.append("        await submit_btn.click()")
+                lines.append("        submit_btn.click()")
                 lines.append("")
                 lines.append("        # Verify validation feedback appears")
                 lines.append('        # Note: specific validation selectors depend on the application')
-                lines.append("        await page.wait_for_timeout(1000)")
+                lines.append("        page.wait_for_timeout(1000)")
                 lines.append("")
 
         file_path = self._tests_dir / "test_forms_generated.py"
@@ -433,7 +433,7 @@ class CrawlTestGenerator:
         lines.append(header)
         lines.append("import allure")
         lines.append("import pytest")
-        lines.append("from playwright.async_api import Page")
+        lines.append("from playwright.sync_api import Page")
         lines.append("")
         lines.append("")
         lines.append('@allure.feature("Navigation Tests")')
@@ -445,14 +445,14 @@ class CrawlTestGenerator:
         # Test that starting page has working navigation
         lines.append("    @allure.title('Start page navigation links')")
         lines.append("    @pytest.mark.smoke")
-        lines.append("    async def test_start_page_navigation(self, page: Page) -> None:")
+        lines.append("    def test_start_page_navigation(self, page: Page) -> None:")
         lines.append(f'        """Verify navigation from the start page."""')
-        lines.append(f'        await page.goto("{site_map.start_url}")')
-        lines.append('        await page.wait_for_load_state("domcontentloaded")')
+        lines.append(f'        page.goto("{site_map.start_url}")')
+        lines.append('        page.wait_for_load_state("domcontentloaded")')
         lines.append("")
         lines.append("        # Verify navigation links are present")
         lines.append("        nav_links = page.locator('nav a, [role=\"navigation\"] a')")
-        lines.append("        count = await nav_links.count()")
+        lines.append("        count = nav_links.count()")
         lines.append("        assert count > 0, 'Expected navigation links on start page'")
         lines.append("")
 
@@ -461,36 +461,36 @@ class CrawlTestGenerator:
         if depth_1_pages:
             lines.append("    @allure.title('Direct child pages reachable')")
             lines.append("    @pytest.mark.regression")
-            lines.append("    async def test_depth_1_pages_reachable(self, page: Page) -> None:")
+            lines.append("    def test_depth_1_pages_reachable(self, page: Page) -> None:")
             lines.append('        """Verify pages at depth 1 are reachable from the start page."""')
-            lines.append(f'        await page.goto("{site_map.start_url}")')
-            lines.append('        await page.wait_for_load_state("domcontentloaded")')
+            lines.append(f'        page.goto("{site_map.start_url}")')
+            lines.append('        page.wait_for_load_state("domcontentloaded")')
             lines.append("")
             lines.append("        # Check that links to child pages exist")
             for child in depth_1_pages[:5]:
                 path = self._url_path(child.url)
                 lines.append(f'        link = page.locator(\'a[href*="{path}"]\')')
                 lines.append(f"        # Link to {child.title or child.url}")
-                lines.append("        if await link.count() > 0:")
-                lines.append("            assert await link.first.is_visible()")
+                lines.append("        if link.count() > 0:")
+                lines.append("            assert link.first.is_visible()")
                 lines.append("")
 
         # Test back navigation
         lines.append("    @allure.title('Browser back navigation works')")
         lines.append("    @pytest.mark.regression")
-        lines.append("    async def test_back_navigation(self, page: Page) -> None:")
+        lines.append("    def test_back_navigation(self, page: Page) -> None:")
         lines.append('        """Verify browser back button returns to previous page."""')
-        lines.append(f'        await page.goto("{site_map.start_url}")')
-        lines.append('        await page.wait_for_load_state("domcontentloaded")')
+        lines.append(f'        page.goto("{site_map.start_url}")')
+        lines.append('        page.wait_for_load_state("domcontentloaded")')
         lines.append("")
         if depth_1_pages:
             lines.append(f'        # Navigate to a child page')
-            lines.append(f'        await page.goto("{depth_1_pages[0].url}")')
-            lines.append('        await page.wait_for_load_state("domcontentloaded")')
+            lines.append(f'        page.goto("{depth_1_pages[0].url}")')
+            lines.append('        page.wait_for_load_state("domcontentloaded")')
         lines.append("")
         lines.append("        # Go back")
-        lines.append("        await page.go_back()")
-        lines.append('        await page.wait_for_load_state("domcontentloaded")')
+        lines.append("        page.go_back()")
+        lines.append('        page.wait_for_load_state("domcontentloaded")')
         lines.append("")
         lines.append(f'        # Should be back at start')
         lines.append(f'        assert "{self._url_path(site_map.start_url)}" in page.url')
@@ -521,7 +521,7 @@ class CrawlTestGenerator:
         lines.append(header)
         lines.append("import allure")
         lines.append("import pytest")
-        lines.append("from playwright.async_api import Page")
+        lines.append("from playwright.sync_api import Page")
         lines.append("")
         lines.append("")
         lines.append('@allure.feature("Action Tests")')
@@ -536,19 +536,19 @@ class CrawlTestGenerator:
 
             lines.append(f"    @allure.title('Buttons visible on {page.title or page.url}')")
             lines.append("    @pytest.mark.regression")
-            lines.append(f"    async def test_{test_name}_buttons_visible(self, page: Page) -> None:")
+            lines.append(f"    def test_{test_name}_buttons_visible(self, page: Page) -> None:")
             lines.append(f'        """Verify action buttons are visible on {page.title or page.url}."""')
-            lines.append(f'        await page.goto("{page.url}")')
-            lines.append('        await page.wait_for_load_state("domcontentloaded")')
+            lines.append(f'        page.goto("{page.url}")')
+            lines.append('        page.wait_for_load_state("domcontentloaded")')
             lines.append("")
 
             for btn in buttons[:5]:
                 btn_desc = btn.text or btn.aria_label or btn.selector
                 lines.append(f'        # Button: {btn_desc}')
                 lines.append(f'        btn = page.locator("{btn.selector}")')
-                lines.append("        if await btn.count() > 0:")
-                lines.append("            assert await btn.first.is_visible()")
-                lines.append("            assert await btn.first.is_enabled()")
+                lines.append("        if btn.count() > 0:")
+                lines.append("            assert btn.first.is_visible()")
+                lines.append("            assert btn.first.is_enabled()")
                 lines.append("")
 
         file_path = self._tests_dir / "test_actions_generated.py"
@@ -603,18 +603,35 @@ class CrawlTestGenerator:
     def _url_to_test_name(self, url: str, title: str = "") -> str:
         """Convert URL/title to a valid pytest test function name.
 
+        Uses the URL path to ensure uniqueness even when multiple pages
+        share the same title. Falls back to title only for the root page.
+
         Args:
             url: The page URL.
             title: Optional page title.
 
         Returns:
-            snake_case test name.
+            snake_case test name guaranteed unique per URL.
         """
-        name = self._url_to_file_name(url, title)
+        # Always derive from URL path for uniqueness
+        path = self._url_path(url)
+        if path and path != "/":
+            # Use path: /catalogo?cat=Perros → catalogo_cat_perros
+            cleaned = re.sub(r"[^\w\s]", " ", path).lower()
+            parts = cleaned.split()
+            name = "_".join(p for p in parts if p)
+        elif title:
+            # Root page: use title
+            cleaned = re.sub(r"[^\w\s]", " ", title).lower()
+            parts = cleaned.split()
+            name = "_".join(p for p in parts if p)
+        else:
+            name = "home"
+
         # Ensure it starts with a letter
         if name and name[0].isdigit():
             name = f"page_{name}"
-        return name
+        return name or "unknown"
 
     def _element_to_attr_name(self, elem) -> str:
         """Convert an element to a Python attribute name.
